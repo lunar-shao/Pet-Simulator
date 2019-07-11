@@ -16,7 +16,7 @@ public class MenuManager : MonoBehaviour{
     void Update() {
         //If mouse click load the scene choice
         if (Input.GetMouseButtonUp(0)) {
-            SceneManager.LoadScene("Choice");
+            SceneManager.LoadScene("Game");
         }
     }
 
