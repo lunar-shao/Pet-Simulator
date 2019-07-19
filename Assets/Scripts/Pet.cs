@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System;
+using System.Timers;
 
 public class Pet : MonoBehaviour {
 
@@ -19,29 +20,12 @@ public class Pet : MonoBehaviour {
     /*********************Getters and setters********************/
     public int hunger {
         get { return _hunger; }
-        set {
-            _hunger = value;
-            if (_hunger < 0) {
-                _hunger = 0;
-            }
-            if (_hunger > 100) {
-                _hunger = 100;
-            }
-
-        }
+        set {_hunger = value;}
     }
 
     public int happiness {
         get { return _happiness; }
-        set { _happiness = value;
-            if (_happiness < 0) {
-                _happiness = 0;
-            }
-            if (_happiness > 100) {
-                _happiness = 100;
-            }
-
-        }
+        set { _happiness = value;}
     }
 
     public string name {
@@ -53,16 +37,41 @@ public class Pet : MonoBehaviour {
 
     // Start is called before the first frame update
     void Start(){
-        PlayerPrefs.SetString("then", "07/10/2019 7:54:00");
         updateStatus();
+        if (!PlayerPrefs.HasKey("name")) {
+            PlayerPrefs.SetString("name", " Pet");
+        }
+        else {
+            _name = PlayerPrefs.GetString("name");
+        }
     }
 
     // Update is called once per frame
     void Update() {
-        
+
+        //If pet is above certain point, jump
+        GetComponent<Animator>().SetBool("jump", gameObject.transform.position.y > -1.6f);
+
+        if (Input.GetMouseButtonUp(0)) {
+            //Get mouse location
+            Vector2 v = new Vector2(Input.mousePosition.x, Input.mousePosition.y);
+            //Check if click on pet
+            RaycastHit2D hit = Physics2D.Raycast(Camera.main.ScreenToWorldPoint(v), Vector2.zero);
+
+            if (hit) {
+                if(hit.transform.gameObject.tag == "pet") {
+                    _clickCount++;
+                    if(_clickCount >= 3) {
+                        _clickCount = 0;
+                        updateHappiness(1);
+                        GetComponent<Rigidbody2D>().AddForce(new Vector2(0, 100000));
+                    }
+                }
+            }
+        }
     }
 
-    //Update status of robot
+    //Update status of pet
     void updateStatus() {
         if (!PlayerPrefs.HasKey("_hunger")) {
             _hunger = 100;
@@ -87,19 +96,16 @@ public class Pet : MonoBehaviour {
 
         TimeSpan ts = getTimeSpan();
 
-        //For every hour, substrac 2 of hunger
+        //For every hour, substract 2 of hunger
         _hunger -= (int)(ts.TotalHours * 2);
         if (_hunger < 0) {
             _hunger = 0;
         }
         // For x of _hunger, divided by total hour, happiness going down
         _happiness -= (int)((100 - _hunger) * (ts.TotalHours / 5));
-        /*if (_happiness < 0) {
+        if (_happiness < 0) {
             _happiness = 0;
-        }*/
-
-        Debug.Log(getTimeSpan().ToString() + "debug updateStatus");
-        //Debug.Log(getTimeSpan().TotalHours);
+        }
 
         //Check time based on device, can create a loophole
         InvokeRepeating("updateDevice", 0f, 30f);
@@ -121,22 +127,45 @@ public class Pet : MonoBehaviour {
 
     public void updateHappiness(int i) {
         _happiness += i;
-        /*if (_happiness > 100) {
+        if (_happiness > 100) {
             happiness = 100;
-        }*/
+        }
     }
 
     public void updateHunger(int i) {
         _hunger += i;
-        /*if (_happiness > 100) {
-            happiness = 100;
-        }*/
+        if (_hunger > 100) {
+            _hunger = 100;
+        }
     }
 
     //Save of the game
-    public void saveRobot() {
+    public void savePet() {
         updateDevice();
         PlayerPrefs.SetInt("_hunger", _hunger);
         PlayerPrefs.SetInt("_happiness", _happiness);
     }
+
+    //When pet is between 1 and 25 of happiness
+    public void hurt() {
+        if(_happiness < 30) {
+            GetComponent<Animator>().SetBool("hurt",true);
+        }
+        else {
+            GetComponent<Animator>().SetBool("hurt", false);
+        }
+    }
+
+    //When pet is at 0 of hunger
+    public void dead() {
+        if (_hunger == 0) {
+            GetComponent<Animator>().SetBool("hurt", false);
+            GetComponent<Animator>().SetBool("dead", true);
+        }
+        else {
+            GetComponent<Animator>().SetBool("dead", false);
+        }
+
+    }
+   
 }
